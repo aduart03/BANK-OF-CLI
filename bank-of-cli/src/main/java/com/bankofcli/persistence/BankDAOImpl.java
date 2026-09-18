@@ -81,6 +81,8 @@ public class BankDAOImpl implements BankDAO {
         try(Connection connection = ConnectionFactory.getConnectionFactory().getConnection();
             PreparedStatement statement = connection.prepareStatement(
                                             INSERT_SQL, Statement.RETURN_GENERATED_KEYS)){
+                
+                //connection.setAutoCommit(false);
                 statement.setString(1, account.getPin());
                 statement.setDouble(2, account.getBalance());
                 statement.executeUpdate();
@@ -90,6 +92,8 @@ public class BankDAOImpl implements BankDAO {
                         account.setAccount_id(keys.getInt(1));
                     }
                 }
+
+                //connection.commit();
         }catch(SQLException e){
             throw databaseError("Could not add account", e);
 

@@ -1,5 +1,8 @@
 package com.bankofcli.api;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import com.bankofcli.domain.Account;
@@ -15,15 +18,21 @@ class BankOfCliRepl{
     public final Scanner sc = new Scanner(System.in);
     private final BankService accountService;
     private Account currentAccount;
-    private Account toAccount;
+
+    // UI Cosmetics
+    public static final String RESET  = "\u001B[0m";
+    public static final String GREEN  = "\u001B[38;5;83m";
+    private static final int WIDTH = 20;
 
     public BankOfCliRepl(BankService accountService){
         this.accountService = accountService;
     }
 
     public void run(){
-        System.out.println("\nWelcome to the Bank Of CLI!");
-        System.out.println("Type help to see our menu options.");
+        printBanner();
+        System.out.println("\nWelcome to the Bank Of CLI!\n");
+        System.out.println("If you want to see the menu again simply type " + "'help'" + "\n");
+        showMenu();
         System.out.print("> ");
         while ( sc.hasNext() ){
             System.out.println();
@@ -46,10 +55,66 @@ class BankOfCliRepl{
         System.out.println();
     }
 
+    private void showMenu(){
+        // Menu
+        /*
+        toArray(new String[0]) and how it works:
+        We are transforming a list into an array, using toArray() and passing in a new string array inside the parameters
+        so that java knows how to manufacture the array once(the new string array in the parameters), java calculates the
+        size of the new array(which im assuming is based on the list you're turning into an array).
+        */
+       List<String> menuOptions = new ArrayList<>();
+        menuOptions.add("");
+        menuOptions.add( "> login");
+        menuOptions.add("> logout");
+        menuOptions.add("> signup");
+        menuOptions.add("> balance");
+        menuOptions.add("> update");
+        menuOptions.add("> transfer");
+        menuOptions.add("> deposit");
+        menuOptions.add("> withdraw");
+        menuOptions.add("> transactions");
+        menuOptions.add("> delete");
+        menuOptions.add("> help");
+        menuOptions.add("> exit");
+        menuOptions.add("");
 
+        printMenuBox(menuOptions.toArray(new String[0]));
+
+    }
+
+    // BANNER TITLE UI
+    public void printBanner(){
+        System.out.println();
+        try(InputStream in = BankOfCliRepl.class.getResourceAsStream("banner/banner.txt")){
+            if (in == null)return;
+            System.out.println(GREEN + new String(in.readAllBytes(), StandardCharsets.UTF_8) + RESET);
+        }catch(IOException e){
+            System.out.println("Could not load banner: " + e.getMessage() );
+        }
+    }
+
+    // MENU BOX UI
+    public void printMenuBox(String... lines){
+        int interior = WIDTH - 4;
+        int longest = 0;
+        for (String line : lines) longest = Math.max(longest, line.length());
+        int indent = Math.max(0, (interior - longest) / 2);
+
+        String edge = "$".repeat(WIDTH);
+        System.out.println(GREEN + edge + RESET);
+
+        for (String line : lines){
+            String padded = String.format("%-"+ interior + "s"," ".repeat(indent) + line );
+            System.out.println(GREEN + "$ " + RESET + padded + GREEN + " $" + RESET);
+        }
+        System.out.println(GREEN + edge + RESET);
+    }
+
+
+    //Input Handler
     private void handle(String input){
         switch (input){
-            case "help" -> printHelp();
             case "login" -> doLogin();
             case "logout" -> { currentAccount = null; System.out.println("Logged out."); }
             case "signup" -> signUp();
@@ -60,48 +125,12 @@ class BankOfCliRepl{
             case "withdraw" -> requireLogin(this :: withdraw);
             case "transactions" -> requireLogin(this :: fetchTransactions);
             case "delete" -> requireLogin(this :: deleteAccount );
+            case "help" -> showMenu();
             default -> System.out.println("Type 'help' if you want to see our menu options. :) \nYou can exit the application by typing 'exit'.");
         }
 
     }
-    private void printHelp(){
-        System.out.println("Here are our menu options:\n");
 
-        System.out.print("> ");
-        System.out.println("login");
-
-        System.out.print("> ");
-        System.out.println("logout");
-
-        System.out.print("> ");
-        System.out.println("signup");
-
-        System.out.print("> ");
-        System.out.println("balance");
-
-        System.out.print("> ");
-        System.out.println("update");
-
-        System.out.print("> ");
-        System.out.println("transfer");
-
-        System.out.print("> ");
-        System.out.println("deposit");
-
-        System.out.print("> ");
-        System.out.println("withdraw");
-
-        System.out.print("> ");
-        System.out.println("transactions");
-
-        System.out.print("> ");
-        System.out.println("delete");
-
-        System.out.print("> ");
-        System.out.println("exit");
-    }
-
-    
     private void requireLogin(Runnable action){
         if (currentAccount == null) {
             System.out.println("Please log in first. Type 'login' to login.");
@@ -238,7 +267,7 @@ class BankOfCliRepl{
         // Must Be logged in
         List<Transaction> transactions = accountService.getTransactionsByAccountId( currentAccount.getAccount_id() );
         System.out.print("> ");
-        System.out.println("Here are a list of your transactions: ");
+        System.out.println("Here are a list of your transactions(ascending order): ");
         transactions
                 .stream()
                 .forEach(System.out::println);
@@ -251,4 +280,6 @@ class BankOfCliRepl{
         System.out.println("Account "+ currentAccount.getAccount_id() + "was deleted successfully.");
         currentAccount = null;
     }
+
 }
+    

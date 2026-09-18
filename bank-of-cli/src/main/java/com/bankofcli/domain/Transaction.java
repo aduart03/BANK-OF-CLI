@@ -75,7 +75,7 @@ public class Transaction {
 
     @Override 
     public String toString(){
-        return String.format("[%1$tF %1$tR] %s  $%.2f  %s",
+        return String.format("[%1$tF %1$tR] %2$s  $%3$.2f  %4$s",
         timestamp,
         type,
         amount,
