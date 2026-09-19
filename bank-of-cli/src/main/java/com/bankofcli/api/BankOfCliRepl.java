@@ -118,7 +118,7 @@ class BankOfCliRepl{
             case "login" -> doLogin();
             case "logout" -> { currentAccount = null; System.out.println("Logged out."); }
             case "signup" -> signUp();
-            case "balance" -> requireLogin(() -> System.out.println("Balance " + currentAccount.getBalance()));
+            case "balance" -> requireLogin(() -> showBalance());
             case "update" -> requireLogin(this :: updateAccount);
             case "transfer" -> requireLogin(this :: transfer);
             case "deposit" -> requireLogin(this :: deposit);
@@ -255,8 +255,18 @@ class BankOfCliRepl{
         double transferBalance = Double.parseDouble(sc.next().trim());
 
         accountService.transfer(currentAccount.getAccount_id(), destinationAccount.getAccount_id(), transferBalance);
-    }
+        
+        // Update account in database
+        // only need current account because its currenty logged in
+        // to do this you could set up to new accounts but you would need to return them, and handle them properly.
+        // Instead -> you can just log in again.
+        // currentAccount = accountService.login(currentAccount.getAccount_id(), currentAccount.getPin());
 
+        // or Even Better -> make balance always read from the database
+        //double balance = accountService.findAccountById(currentAccount.getAccount_id()).getBalance();
+        //System.out.println("New Balance: " + balance);
+        showBalance();
+    }
 
     private void deposit(){
         // TODO
@@ -269,6 +279,8 @@ class BankOfCliRepl{
 
         System.out.print("> ");
         System.out.println(depositBalance + " was deposited into the account " + currentAccount.getAccount_id());
+        showBalance();
+        
     }
 
     private void withdraw(){
@@ -282,7 +294,14 @@ class BankOfCliRepl{
 
         System.out.print("> ");
         System.out.println(withdrawBalance + " was withdrawn from the account " + currentAccount.getAccount_id());
+        showBalance();
         
+    }
+
+    private void showBalance(){
+        double balance = accountService.findAccountById(currentAccount.getAccount_id()).getBalance();
+        System.out.println("Current Balance: " + balance);
+
     }
 
     private void fetchTransactions(){
