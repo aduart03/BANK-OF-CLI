@@ -149,25 +149,27 @@ class BankOfCliRepl{
     }
 
     private Account login(){
-        System.out.print("> ");
-        System.out.println("Enter your account ID:");
+            // if you use: int account_id = sc.nextInt(); 
+            // scanner will throw error if not number, it wont even reach your catch block because the scanner will complain.
+            int account_id;
+            try{
+                account_id = readInt("Enter your account ID:");
+            }catch(NumberFormatException e){
 
-        int account_id = sc.nextInt();
-        sc.nextLine();
+                System.out.println("Account ID must be a number: " + e.getMessage());
+                return null;
+            }
 
-        System.out.print("> ");
-        System.out.println("Enter your pin:");
-        String pin = sc.next();
-        sc.nextLine();
+            System.out.println("Enter your pin:");
+            String pin = sc.nextLine().trim();
 
-        System.out.println("Looking for your account...");
+            System.out.println("Looking for your account...");
 
-        Account account = accountService.login(account_id, pin);
+            Account account = accountService.login(account_id, pin);
 
-        if (account == null) {
-            System.out.println("Invalid account ID or PIN.");
-            return null;
-        }
+            if(account == null){
+                System.out.println("Invalid account or ID.");
+            }
 
         return account;
 
@@ -178,6 +180,28 @@ class BankOfCliRepl{
             based on their account_id and pin, because you're trying to
             find out what your balance is in the first place.
         */ 
+    }
+
+    /*
+        This is a helper method. It verifies that the input matches what the prompt needs by parsing a string into an Int.
+        Re-prompts if the input type is incorrect.
+        Methods that use this helper method include: login(), transfer()
+    */
+    private int readInt(String prompt){
+        while(true){
+            System.out.print("> " + prompt );
+            String input = sc.next();
+            sc.nextLine();
+
+            try{
+                return Integer.parseInt(input);
+            }catch(NumberFormatException e){
+                System.out.println("Please enter a valid number.");
+                
+            }
+
+        }
+
     }
 
     private void signUp(){
@@ -212,7 +236,7 @@ class BankOfCliRepl{
         double balance = Double.parseDouble(sc.next().trim());
 
         Account updated = new Account(currentAccount.getAccount_id(), currentAccount.getPin(), balance);
-        accountService.updateAccount(updated); // Calls Service methhod updateAccpunt
+        accountService.updateAccount(updated); // Calls Service method updateAccount
         currentAccount = updated;
         System.out.println("Account has been updated!");
     }
@@ -221,10 +245,7 @@ class BankOfCliRepl{
         // TODO
         // Need ID from account: fromAccountId
         // Need If to account: toAccountId
-        System.out.print("> ");
-        System.out.println("To what account would you like to transfer to? (provide ID of account): ");
-        int toAccountId = sc.nextInt();
-        sc.nextLine();
+        int toAccountId = readInt("To what account would you like to transfer to? (provide ID of account):");
 
         //get account from id
         Account destinationAccount = accountService.findAccountById(toAccountId);
@@ -235,6 +256,8 @@ class BankOfCliRepl{
 
         accountService.transfer(currentAccount.getAccount_id(), destinationAccount.getAccount_id(), transferBalance);
     }
+
+
     private void deposit(){
         // TODO
         // Must be logged in
