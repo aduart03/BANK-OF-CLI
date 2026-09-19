@@ -22,6 +22,7 @@ public interface BankService {
 
     // Delete
     public void deleteAccount(int account_id);
+    public void deleteOldTransactions();
 
     // Login | Authneticate
     public Account login(int account_id, String pin);

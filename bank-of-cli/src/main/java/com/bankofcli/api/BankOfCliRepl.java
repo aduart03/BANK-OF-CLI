@@ -30,6 +30,7 @@ class BankOfCliRepl{
 
     public void run(){
         printBanner();
+        deleteOldTransactions();
         System.out.println("\nWelcome to the Bank Of CLI!\n");
         System.out.println("If you want to see the menu again simply type " + "'help'" + "\n");
         showMenu();
@@ -48,6 +49,9 @@ class BankOfCliRepl{
                 handle(input);
             }catch(IllegalArgumentException e){
                 System.out.println("Error: " + e.getMessage());
+            }catch(IllegalStateException e){
+                System.out.println("Service unavailable. Please Try again later.");
+
             }
 
         }
@@ -61,7 +65,7 @@ class BankOfCliRepl{
         toArray(new String[0]) and how it works:
         We are transforming a list into an array, using toArray() and passing in a new string array inside the parameters
         so that java knows how to manufacture the array once(the new string array in the parameters), java calculates the
-        size of the new array(which im assuming is based on the list you're turning into an array).
+        size of the new array(which is based on the list you're turning into an array).
         */
        List<String> menuOptions = new ArrayList<>();
         menuOptions.add("");
@@ -116,7 +120,7 @@ class BankOfCliRepl{
     private void handle(String input){
         switch (input){
             case "login" -> doLogin();
-            case "logout" -> { currentAccount = null; System.out.println("Logged out."); }
+            case "logout" -> logout();
             case "signup" -> signUp();
             case "balance" -> requireLogin(() -> showBalance());
             case "update" -> requireLogin(this :: updateAccount);
@@ -204,10 +208,35 @@ class BankOfCliRepl{
 
     }
 
+    private void logout(){
+        if(currentAccount != null) {
+                currentAccount = null;
+                System.out.print("> ");
+                System.out.println("Logged out.");
+            }else{
+                System.out.print("> ");
+                System.out.println("You are not logged in. There is nobody to logout.");
+            }
+
+    }
+
     private void signUp(){
+        // Check if current account is logged in.
+        // if so , you cant sign up, otherwise, add the sign up functionallity.
+
+        if (currentAccount != null){
+            System.out.println(currentAccount.getAccount_id() + " currently logged in. Cannot sign up at this moment. ");
+            return;
+        }
+
+        //create empty account with initial pin and balance
         Account account = readAccount();
+        
+        // add account to database but first we need to check its pin or we could check the log errors
+        // if account id is 0 then account wont be added to the database
         accountService.addAccount(account);
-        System.out.print(">");
+
+        System.out.print("> ");
         System.out.println("Account created. Your account ID is: " + account.getAccount_id());
     }
 
@@ -232,11 +261,16 @@ class BankOfCliRepl{
 
         // This function assumes you are already logged in.
         System.out.print("> ");
-        System.out.println("What is the new balance?");
-        double balance = Double.parseDouble(sc.next().trim());
+        System.out.println("What is the new pin?");
+        String pin = sc.next().trim();
 
-        Account updated = new Account(currentAccount.getAccount_id(), currentAccount.getPin(), balance);
+        // Creating new account based on input
+        Account updated = new Account(currentAccount.getAccount_id(), pin, currentAccount.getBalance());
+
+        // update the account by using the new created account
         accountService.updateAccount(updated); // Calls Service method updateAccount
+
+        // current account is the updated now
         currentAccount = updated;
         System.out.println("Account has been updated!");
     }
@@ -248,6 +282,7 @@ class BankOfCliRepl{
         int toAccountId = readInt("To what account would you like to transfer to? (provide ID of account):");
 
         //get account from id
+
         Account destinationAccount = accountService.findAccountById(toAccountId);
         System.out.print("> ");
         System.out.println("how much would you like to transfer to " +  destinationAccount.getAccount_id());
@@ -319,8 +354,12 @@ class BankOfCliRepl{
         
         accountService.deleteAccount(currentAccount.getAccount_id());
         System.out.print("> ");
-        System.out.println("Account "+ currentAccount.getAccount_id() + "was deleted successfully.");
+        System.out.println("Account "+ currentAccount.getAccount_id() + " was deleted successfully.");
         currentAccount = null;
+    }
+
+    private void deleteOldTransactions(){
+        accountService.deleteOldTransactions();
     }
 
 }

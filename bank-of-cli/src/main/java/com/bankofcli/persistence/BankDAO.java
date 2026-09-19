@@ -20,6 +20,7 @@ public interface BankDAO {
 
     // Delete
     public void deleteAccount(int account_id);
+    public void deleteOldTransactions();
 
     // Transaction
     public void transfer(int from_id, int to_id, double amount);

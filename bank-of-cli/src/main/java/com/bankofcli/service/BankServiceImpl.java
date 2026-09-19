@@ -44,6 +44,13 @@ public class BankServiceImpl implements BankService {
             throw new IllegalArgumentException("Account already exists.");
         }
         */
+
+        String pin = account.getPin();
+       
+        if (!pin.matches("\\d{4}")){
+            log.error("Pin was either more than or less than 4 digits.");
+            throw new NumberFormatException("Pin must be 4 digits");
+        }
         accountDAO.addAccount(account);
         log.info("Account {} added to database.", account.getAccount_id() );
 
@@ -51,7 +58,18 @@ public class BankServiceImpl implements BankService {
 
     @Override 
     public Account findAccountById(int account_id){
+        // Initial exception was NullPointerException if a certain account cannot be found
+        // or does not exist in the database. However that crashes the application because
+        // no method in BankOfCliRepl matches or catches the exception.
+        // errors usually travel(or 'Propagate') up the call stack to see which method can catch the exception or match it.
+        // This is the concept of exception handling, in this case specifically exception propagation and catching by type.
+        // IllegalArgumentException is caught in run(), and it's also the more accurate type: a missing account is bad input, not a bug.
+        if(accountDAO.getAccountById(account_id) == null){
+            log.error("Tried accessing an account that does'nt exist in the database.");
+            throw new IllegalArgumentException("Account does not exist!");
+        }
         Account account = accountDAO.getAccountById(account_id);
+        
         log.info("Account {} found!", account.getAccount_id() );
         return account;
     }
@@ -93,6 +111,16 @@ public class BankServiceImpl implements BankService {
         accountDAO.deleteAccount(account_id);
         log.info("Account {} has been deleted.", account_id );
 
+    }
+
+    @Override
+    public void deleteOldTransactions() {
+        try {
+            accountDAO.deleteOldTransactions();
+            log.info("Transactions older than 30 days deleted successfully.");
+        } catch (IllegalStateException e) {
+            log.error("Could not delete old transactions: {}", e.getMessage());
+        }
     }
 
     @Override 

@@ -38,10 +38,10 @@ public class BankDAOImpl implements BankDAO {
     private static final String CREATE_TABLE_TRANSACTION_SQL = """
             CREATE TABLE IF NOT EXISTS transaction (
             transaction_id SERIAL PRIMARY KEY,
-            account_id INTEGER NOT NULL REFERENCES account(account_id),
+            account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE,
+            related_account_id INTEGER REFERENCES account(account_id) ON DELETE SET NULL,
             type VARCHAR(20) NOT NULL,
             amount NUMERIC(12, 2) NOT NULL,
-            related_account_id INTEGER REFERENCES account(account_id),
             timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """;
@@ -57,6 +57,7 @@ public class BankDAOImpl implements BankDAO {
     private static final String DEBIT_SQL = "UPDATE account SET balance = balance - ? WHERE account_id = ? AND balance >= ?";
     private static final String CREDIT_SQL = "UPDATE account SET balance = balance + ? WHERE account_id = ?";
     private static final String INSERT_TRANSACTION_SQL = "INSERT INTO transaction (account_id, type, amount, related_account_id) VALUES (?, ?, ?, ?)";
+    private static final String DELETE_TRANSACTIONS_DATETIME = "DELETE FROM transaction WHERE timestamp < NOW() - INTERVAL '30 days'";
 
     // Error logs
     private static final Logger log = LoggerFactory.getLogger(BankDAOImpl.class);
@@ -99,10 +100,6 @@ public class BankDAOImpl implements BankDAO {
 
         }
     }
-
-    //@Override 
-    //public Account getAccountById(Account account){return  null;}
-
 
     @Override 
     public Account getAccountById(int account_id){
@@ -181,6 +178,21 @@ public class BankDAOImpl implements BankDAO {
     }
 
     @Override 
+    public void deleteOldTransactions(){
+
+        try(Connection connection = ConnectionFactory.getConnectionFactory().getConnection();
+            PreparedStatement statement = connection.prepareStatement(DELETE_TRANSACTIONS_DATETIME)
+        ){
+            statement.executeUpdate();
+
+        }catch(SQLException e){
+            throw databaseError("Could not delete transactions.", e);
+
+        }
+
+    }
+
+    @Override 
     public void deposit(int accountId, double amount){
 
         Connection connection = null;
@@ -215,7 +227,7 @@ public class BankDAOImpl implements BankDAO {
         }catch (SQLException e){
 
             rollback(connection);
-            log.error("Deposit failed for account {}: {}", accountId, e.getMessage());
+            //log.error("Deposit failed for account {}: {}", accountId, e.getMessage());
             throw databaseError("Could not deposit.", e);
 
         }finally{
@@ -261,7 +273,7 @@ public class BankDAOImpl implements BankDAO {
         }catch (SQLException e){
 
             rollback(connection);
-            log.error("Withdrawl failed for account {}: {}", accountId, e.getMessage());
+            //log.error("Withdrawl failed for account {}: {}", accountId, e.getMessage());
             throw databaseError("Could not withdraw.", e);
 
         }finally{
@@ -348,7 +360,7 @@ public class BankDAOImpl implements BankDAO {
                 }catch (SQLException e){
 
                     rollback(connection);
-                    log.error("Transfer of {} from account {} to account {} failed: {}", amount, from_id, to_id, e.getMessage());
+                    //log.error("Transfer of {} from account {} to account {} failed: {}", amount, from_id, to_id, e.getMessage());
                     throw databaseError("Could not transfer funds.", e);
 
                 }finally{
@@ -377,49 +389,6 @@ public class BankDAOImpl implements BankDAO {
         }
     }
 
-
-
-
-
-
-
-    /*
-    public Account updateAccountBalance(Account account, double amount){
-
-        // Don't need id or pin because -> Assume you are already logged in.
-        // This method should only fire when you are logged in.
-        // logged in assumes that you already input your pin so no need to check for pin.
-        // Simply get the id that matches then update the balance
-        // amount inserted will be dpendent on transaction
-        // So just focus on the query
-
-
-        try(Connection connection = ConnectionFactory.getConnectionFactory().getConnection();
-            PreparedStatement statement = connection.prepareStatement(UPDATE_ACCOUNT_BALANCE_SQL);
-            ){
-
-                // Query  UPDATE account SET balance = balance - ? WHERE account_id = ? AND balance >= ?";
-                statement.setDouble(1, amount);
-                statement.setInt(2, account.getAccount_id());
-                statement.setDouble(3, account.getBalance());
-                // Execute statement
-                statement.executeUpdate();
-
-                try (ResultSet keys = statement.getGeneratedKeys()) {
-                    if (keys.next()) {
-                        account.setAccount_id(keys.getInt(1));
-                        account.setBalance(balance);
-                    }
-                }
-
-        }catch(SQLException e){
-            throw databaseError("Could not update account balance. ", e);
-        }
-        
-
-    }
-         */
-
     private void initializeAccountSchema(){
         try(Connection connection = ConnectionFactory.getConnectionFactory().getConnection();
             PreparedStatement statement = connection.prepareStatement(CREATE_TABLE_ACCOUNT_SQL)) {
@@ -429,7 +398,6 @@ public class BankDAOImpl implements BankDAO {
         }
 
     }
-
 
     private void initializeTransactionSchema(){
         try(Connection connection = ConnectionFactory.getConnectionFactory().getConnection();
@@ -442,6 +410,7 @@ public class BankDAOImpl implements BankDAO {
     }
 
     private IllegalStateException databaseError(String message, SQLException cause) {
+        log.error("{}: {}", message, cause.getMessage());
         return new IllegalStateException(message, cause);
     }
 
