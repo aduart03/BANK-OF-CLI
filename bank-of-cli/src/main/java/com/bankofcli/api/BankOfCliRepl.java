@@ -153,27 +153,34 @@ class BankOfCliRepl{
     }
 
     private Account login(){
-            // if you use: int account_id = sc.nextInt(); 
-            // scanner will throw error if not number, it wont even reach your catch block because the scanner will complain.
-            int account_id;
-            try{
-                account_id = readInt("Enter your account ID:");
-            }catch(NumberFormatException e){
 
-                System.out.println("Account ID must be a number: " + e.getMessage());
-                return null;
-            }
+        // Check if you are currently logged in
+        if (currentAccount != null){
+            System.out.println(currentAccount.getAccount_id() + " currently logged in. Cannot log in to another account at this moment. ");
+            return null;
+        }
 
-            System.out.println("Enter your pin:");
-            String pin = sc.nextLine().trim();
+        // if you use: int account_id = sc.nextInt(); 
+        // scanner will throw error if not number, it wont even reach your catch block because the scanner will complain.
+        int account_id;
+        try{
+            account_id = readInt("Enter your account ID:");
+        }catch(NumberFormatException e){
 
-            System.out.println("Looking for your account...");
+            System.out.println("Account ID must be a number: " + e.getMessage());
+            return null;
+        }
 
-            Account account = accountService.login(account_id, pin);
+        System.out.println("Enter your pin:");
+        String pin = sc.nextLine().trim();
 
-            if(account == null){
-                System.out.println("Invalid account or ID.");
-            }
+        System.out.println("Looking for your account...");
+
+        Account account = accountService.login(account_id, pin);
+
+        if(account == null){
+            System.out.println("Invalid account or ID.");
+        }
 
         return account;
 
