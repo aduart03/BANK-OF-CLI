@@ -139,11 +139,15 @@ public class BankServiceImpl implements BankService {
 
     @Override 
     public void withdraw(int account_id, double amount){
-        // overdraft check already in DAO so don't have to check 
+        // overdraft check
+        if(accountDAO.getAccountById(account_id).getBalance() < amount){
+            throw new IllegalArgumentException("Insufficient funds.");
+        }
         // amount being more than actual balance here
         if(amount <= 0){
             throw new IllegalArgumentException("Amount is less than 0");
         }
+
         accountDAO.withdraw(account_id, amount);
         log.info("Amount {} withdrawn from account {} successfully.", amount, account_id);
     }
@@ -154,6 +158,7 @@ public class BankServiceImpl implements BankService {
         // 1. amount
         // 2. two ids being the same
         // 3. whether destination exists
+        // 4. if transfer amount exceeds stored amount
 
         if (amount <= 0){
             throw new IllegalArgumentException("Amount must be greater than zero.");
@@ -163,6 +168,9 @@ public class BankServiceImpl implements BankService {
         }
         if( accountDAO.getAccountById(to_id) ==  null){
             throw new IllegalArgumentException("Account not found.");
+        }
+        if(accountDAO.getAccountById(from_id).getBalance() < amount){
+            throw new IllegalArgumentException("Insufficient funds.");
         }
 
         accountDAO.transfer(from_id, to_id, amount);
