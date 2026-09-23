@@ -5,4 +5,4 @@ target/
 *.iml
 *.log
 .env
-src/main/resources/db.properties
+**/src/main/resources/db.properties
