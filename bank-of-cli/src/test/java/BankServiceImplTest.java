@@ -13,6 +13,12 @@ public class BankServiceImplTest {
 
     /*
     Negative: verifies the code works as expected with invalid inputs
+    
+    A self-transfer must be rejected. Here we are testing the transfer method
+    from the Service layer to see if we can transfer money to out own account.
+    
+    Expected: The test should be negative because we cant allow self transfers and the 
+    exception should be IllegalArgumentException
     */
     @Test
     public void transfer() {
@@ -23,6 +29,11 @@ public class BankServiceImplTest {
 
     /*
     Positive: verifies code works when given valid inputs
+
+    A transfer to another account succeeeds when the balance transfer is not less than
+    0, not negative , and not a self transfer.
+
+    Expected : Positive, transfer should go through
     */
    @Test 
    public void transferSucceeds(){

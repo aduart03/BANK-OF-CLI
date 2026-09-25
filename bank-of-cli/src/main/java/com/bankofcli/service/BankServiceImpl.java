@@ -51,6 +51,9 @@ public class BankServiceImpl implements BankService {
             log.error("Pin was either more than or less than 4 digits.");
             throw new NumberFormatException("Pin must be 4 digits");
         }
+        if (!(account.getBalance() >= 0)){
+        throw new IllegalArgumentException("Initial balance cannot be negative.");
+        }
         accountDAO.addAccount(account);
         log.info("Account {} added to database.", account.getAccount_id() );
 
